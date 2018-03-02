@@ -95,6 +95,14 @@ const canContinue = (id) => {
 }
 
 Template.bountyRender.helpers({
+  hasActiveBounty: () => {
+    let b = Bounties.findOne({
+      userId: Meteor.userId(),
+      completed: false
+    })
+
+    return Cookies.get('workingBounty') === 'true' && b && b.expiresAt > Date.now() ? 'disabled' : ''
+  },
   types: function () {
     return this.types || BountyTypes.findOne();
   },
@@ -110,9 +118,18 @@ Template.bountyRender.helpers({
     return canContinue(this._id)
   },
   buttonClass: function() {
-    if(this.currentlyAvailable == true) {
-        return "btn-outline-primary takeBounty";
-    } else { return "btn-outline-secondary";}
+    let b = Bounties.findOne({
+      userId: Meteor.userId(),
+      completed: false
+    })
+
+    // grey out the button if the bounty is not currently available, or if the use is already working on another bounty
+    // of course, don't grey it out if the user can continue tha current bounty
+    if(this.currentlyAvailable === false || (Cookies.get('workingBounty') === 'true' && b && b.expiresAt > Date.now()) && !canContinue(this._id)) {
+        return "btn-outline-secondary";
+    } else { 
+      return "btn-outline-primary takeBounty"
+    }
   },
   reward: function () {
     return calculateReward.call(this, Template.instance().view.parentView.parentView.parentView.templateInstance().now.get())
